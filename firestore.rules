@@ -1,0 +1,89 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    function isSuperAdmin() {
+      return isAuthenticated() && 
+             request.auth.token.email == 'team.clicknetmedia@gmail.com';
+    }
+
+    function isOwner(userId) {
+      return isAuthenticated() && request.auth.uid == userId;
+    }
+
+    function isValidUserProfile(data) {
+      return data.keys().hasAll(['uid', 'email', 'role', 'name', 'status']) &&
+             data.uid is string &&
+             data.email is string &&
+             data.role in ['superAdmin', 'client', 'operator'] &&
+             data.name is string &&
+             data.name.size() > 0 &&
+             data.status in ['active', 'suspended'] &&
+             (!('brandName' in data) || data.brandName is string) &&
+             (!('ownerName' in data) || data.ownerName is string) &&
+             (!('phone' in data) || data.phone is string) &&
+             (!('createdAt' in data) || (data.createdAt is timestamp && data.createdAt <= request.time)) &&
+             (!('lastLoginAt' in data) || (data.lastLoginAt is timestamp && data.lastLoginAt <= request.time)) &&
+             (!('lastPasswordChangedAt' in data) || (data.lastPasswordChangedAt is timestamp && data.lastPasswordChangedAt <= request.time));
+    }
+
+    function isValidRestaurant(data) {
+      return data.keys().hasAll(['id', 'name', 'ownerEmail', 'tablesCount', 'status', 'subscriptionPlan']) &&
+             data.id is string &&
+             data.name is string &&
+             data.ownerEmail is string &&
+             data.tablesCount is number &&
+             data.status in ['active', 'maintenance', 'closed'] &&
+             data.subscriptionPlan in ['Starter', 'Professional', 'Enterprise'];
+    }
+
+    function isValidOrder(data) {
+      return data.keys().hasAll(['id', 'restaurantId', 'tableNumber', 'totalAmount', 'status']) &&
+             data.id is string &&
+             data.restaurantId is string &&
+             data.tableNumber is string &&
+             data.totalAmount is number &&
+             data.status in ['Pending', 'Preparing', 'Served', 'Completed', 'Cancelled'];
+    }
+
+    // Users Collection
+    match /users/{userId} {
+      allow read: if isAuthenticated() && (isOwner(userId) || isSuperAdmin());
+      
+      // Creating user document: super admin can create anything, or user can create their own doc with client/operator role (superAdmin only if team.clicknetmedia@gmail.com)
+      allow create: if isAuthenticated() && 
+                    (isOwner(userId) || isSuperAdmin()) &&
+                    isValidUserProfile(request.resource.data) &&
+                    (request.resource.data.role != 'superAdmin' || request.auth.token.email == 'team.clicknetmedia@gmail.com');
+
+      // Updating user document: normal users cannot change their role, email, status, or UID
+      allow update: if isAuthenticated() && 
+                    ((isOwner(userId) && 
+                      isValidUserProfile(request.resource.data) &&
+                      request.resource.data.role == resource.data.role &&
+                      request.resource.data.email == resource.data.email &&
+                      request.resource.data.status == resource.data.status &&
+                      request.resource.data.uid == resource.data.uid) ||
+                     isSuperAdmin());
+
+      allow delete: if isSuperAdmin();
+    }
+
+    // Restaurants Collection
+    match /restaurants/{restaurantId} {
+      allow read: if isAuthenticated();
+      allow write: if isSuperAdmin() || 
+                   (isAuthenticated() && request.resource.data.ownerEmail == request.auth.token.email && isValidRestaurant(request.resource.data));
+    }
+
+    // Orders Collection
+    match /orders/{orderId} {
+      allow read: if isAuthenticated();
+      allow write: if isAuthenticated() && (isSuperAdmin() || isValidOrder(request.resource.data));
+    }
+  }
+}

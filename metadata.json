@@ -1,0 +1,6 @@
+{
+  "name": "Clicknet CRM",
+  "description": "Clicknet Restaurant CRM with Super Admin and restaurant operations management.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

@@ -1,0 +1,8 @@
+{
+  "firestore": [
+    {
+      "database": "ai-studio-android-secureau-04b7a3f7-45f2-42d4-90f6-b6a8752fb578",
+      "rules": "firestore.rules"
+    }
+  ]
+}

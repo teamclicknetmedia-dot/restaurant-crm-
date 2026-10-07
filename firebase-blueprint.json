@@ -1,0 +1,69 @@
+{
+  "entities": {
+    "UserProfile": {
+      "title": "UserProfile",
+      "description": "User profile with role-based access for Clicknet CRM",
+      "type": "object",
+      "properties": {
+        "uid": { "type": "string", "description": "Auth UID" },
+        "email": { "type": "string", "format": "email", "description": "Account email" },
+        "role": { "type": "string", "enum": ["superAdmin", "client", "operator"], "description": "Access control role" },
+        "name": { "type": "string", "description": "Display name" },
+        "status": { "type": "string", "enum": ["active", "suspended"], "description": "Account status" },
+        "createdAt": { "type": "string", "format": "date-time", "description": "Creation timestamp via serverTimestamp" },
+        "lastLoginAt": { "type": "string", "format": "date-time", "description": "Last login timestamp" },
+        "lastPasswordChangedAt": { "type": "string", "format": "date-time", "description": "Last password changed timestamp" },
+        "brandName": { "type": "string", "description": "Brand name" },
+        "ownerName": { "type": "string", "description": "Owner name" },
+        "phone": { "type": "string", "description": "Phone number" }
+      },
+      "required": ["uid", "email", "role", "name", "status"]
+    },
+    "Restaurant": {
+      "title": "Restaurant",
+      "description": "Restaurant brand and establishment details",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "description": "Restaurant identifier" },
+        "name": { "type": "string", "description": "Restaurant name" },
+        "ownerEmail": { "type": "string", "format": "email", "description": "Owner email address" },
+        "phone": { "type": "string", "description": "Contact phone" },
+        "address": { "type": "string", "description": "Physical address" },
+        "tablesCount": { "type": "number", "description": "Number of tables" },
+        "status": { "type": "string", "enum": ["active", "maintenance", "closed"], "description": "Operating status" },
+        "subscriptionPlan": { "type": "string", "enum": ["Starter", "Professional", "Enterprise"], "description": "CRM Plan" },
+        "createdAt": { "type": "string", "format": "date-time", "description": "Creation timestamp" }
+      },
+      "required": ["id", "name", "ownerEmail", "tablesCount", "status", "subscriptionPlan"]
+    },
+    "Order": {
+      "title": "Order",
+      "description": "Dine-in and takeaway orders",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "description": "Order ID" },
+        "restaurantId": { "type": "string", "description": "Associated restaurant ID" },
+        "tableNumber": { "type": "string", "description": "Table identifier" },
+        "itemsSummary": { "type": "string", "description": "Items ordered summary" },
+        "totalAmount": { "type": "number", "description": "Total amount" },
+        "status": { "type": "string", "enum": ["Pending", "Preparing", "Served", "Completed", "Cancelled"], "description": "Order status" },
+        "createdAt": { "type": "string", "format": "date-time", "description": "Order timestamp" }
+      },
+      "required": ["id", "restaurantId", "tableNumber", "totalAmount", "status"]
+    }
+  },
+  "firestore": {
+    "/users/{userId}": {
+      "schema": { "$ref": "#/entities/UserProfile" },
+      "description": "User profile with role access"
+    },
+    "/restaurants/{restaurantId}": {
+      "schema": { "$ref": "#/entities/Restaurant" },
+      "description": "Restaurant records managed by super admin and owners"
+    },
+    "/orders/{orderId}": {
+      "schema": { "$ref": "#/entities/Order" },
+      "description": "Orders in the CRM system"
+    }
+  }
+}
